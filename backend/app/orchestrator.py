@@ -39,6 +39,26 @@ class Run:
     def to_dict(self) -> dict:
         return {**asdict(self), "duration_s": round(time.time() - self.started, 2)}
 
+    @classmethod
+    def from_dict(cls, doc: dict) -> "Run":
+        keys = ("id", "message", "status", "events", "proposal", "branch", "pr_url", "stats")
+        return cls(
+            **{k: doc[k] for k in keys if k in doc},
+            started=time.time() - doc.get("duration_s", 0),
+        )
+
+
+async def load(run_id: str) -> Run | None:
+    """Return a run from memory, or rebuild it from Firestore if another instance handled it."""
+    run = RUNS.get(run_id)
+    if run is None:
+        doc = await store.load(run_id)
+        if doc is None:
+            return None
+        run = Run.from_dict(doc)
+        RUNS[run_id] = run
+    return run
+
 
 async def execute(run: Run) -> None:
     """Route the request to the Answerer, or to the Writer/Reviewer loop."""

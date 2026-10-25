@@ -28,6 +28,7 @@ export type Run = {
 };
 
 export class AuthError extends Error {}
+export class NotFoundError extends Error {}
 
 async function request(path: string, token: string, init: { method?: string; body?: string; signal?: AbortSignal } = {}) {
   const res = await fetch(`${API_URL}${path}`, {
@@ -35,6 +36,7 @@ async function request(path: string, token: string, init: { method?: string; bod
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
   });
   if (res.status === 401 || res.status === 403) throw new AuthError(await res.text());
+  if (res.status === 404) throw new NotFoundError(await res.text());
   if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
   return res;
 }
