@@ -1,0 +1,136 @@
+:root {
+  font-family: system-ui, -apple-system, sans-serif;
+  color-scheme: light dark;
+  line-height: 1.4;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+main.center {
+  padding-top: 15vh;
+  text-align: center;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+h1 {
+  font-size: 1.4rem;
+  margin: 8px 0;
+}
+
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: 16px; /* avoids iOS zoom on focus */
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #8884;
+  resize: vertical;
+}
+
+button {
+  font-size: 16px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+button.secondary {
+  background: #8884;
+  color: inherit;
+}
+
+button.link {
+  background: none;
+  color: #2563eb;
+  padding: 8px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.error {
+  color: #dc2626;
+}
+
+.working {
+  color: #2563eb;
+  font-style: italic;
+}
+
+.run {
+  margin-top: 24px;
+}
+
+.request {
+  padding: 12px;
+  border-radius: 8px;
+  background: #8881;
+}
+
+.timeline {
+  list-style: none;
+  padding: 0;
+}
+
+.timeline li {
+  padding: 10px 0;
+  border-bottom: 1px solid #8882;
+}
+
+.time {
+  color: #8888;
+  font-size: 0.85rem;
+  margin-right: 6px;
+}
+
+pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #8881;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  overflow-x: auto;
+}
+
+.approval {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+}
+
+details {
+  margin: 8px 0;
+}
+
+.stats {
+  margin-top: 16px;
+  color: #8888;
+  font-size: 0.9rem;
+}
