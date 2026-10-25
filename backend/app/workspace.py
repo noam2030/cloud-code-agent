@@ -6,7 +6,6 @@ from app import config
 ROOT = pathlib.Path(config.WORKSPACE)
 MAX_FILE_BYTES = 20_000
 COAUTHOR = "Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>"
-PR_FOOTER = "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
 
 
 def _run(cmd: list[str]) -> str:
@@ -39,20 +38,17 @@ def _safe_path(path: str) -> pathlib.PurePosixPath:
     return p
 
 
-def commit_and_pr(branch: str, proposal: dict, message: str) -> str:
-    """Apply approved changes on a side branch, push, and open a pull request."""
+def commit_to_main(proposal: dict) -> str:
+    """Apply approved changes directly on main, push, and return the commit URL."""
     _run(["git", "checkout", "main"])
     _run(["git", "pull", "--ff-only"])
-    _run(["git", "checkout", "-B", branch])
     for change in proposal["files"]:
         target = ROOT / _safe_path(change["path"])
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(change["content"])
     _run(["git", "add", "-A"])
     _run(["git", "commit", "-m", f"{proposal['summary']}\n\n{COAUTHOR}"])
-    _run(["git", "push", "-u", "origin", branch])
-    body = f"Requested via cloud-code-agent:\n\n> {message}\n\n{PR_FOOTER}"
-    return _run(
-        ["gh", "pr", "create", "--base", "main", "--head", branch,
-         "--title", proposal["summary"][:70], "--body", body]
-    ).strip()
+    _run(["git", "push", "origin", "main"])
+    repo_url = _run(["gh", "repo", "view", "--json", "url", "--jq", ".url"]).strip()
+    sha = _run(["git", "rev-parse", "HEAD"]).strip()
+    return f"{repo_url}/commit/{sha}"

@@ -20,8 +20,7 @@ class Run:
     status: str = "running"
     events: list[dict] = field(default_factory=list)
     proposal: dict | None = None
-    branch: str | None = None
-    pr_url: str | None = None
+    commit_url: str | None = None
     started: float = field(default_factory=time.time)
     stats: dict = field(
         default_factory=lambda: {"llm_calls": 0, "input_tokens": 0, "output_tokens": 0, "tool_calls": 0}
@@ -41,7 +40,7 @@ class Run:
 
     @classmethod
     def from_dict(cls, doc: dict) -> "Run":
-        keys = ("id", "message", "status", "events", "proposal", "branch", "pr_url", "stats")
+        keys = ("id", "message", "status", "events", "proposal", "commit_url", "stats")
         return cls(
             **{k: doc[k] for k in keys if k in doc},
             started=time.time() - doc.get("duration_s", 0),
@@ -102,17 +101,14 @@ async def execute(run: Run) -> None:
 
 
 async def apply(run: Run) -> None:
-    """Called only after the user approves: push a side branch and open a PR."""
+    """Called only after the user approves: commit and push straight to main."""
     try:
-        run.branch = f"agent/{run.id}"
-        run.emit("status", text=f"pushing {run.branch} and opening PR")
+        run.emit("status", text="committing and pushing to main")
         async with LOCK:
-            run.pr_url = await asyncio.to_thread(
-                workspace.commit_and_pr, run.branch, run.proposal, run.message
-            )
+            run.commit_url = await asyncio.to_thread(workspace.commit_to_main, run.proposal)
         run.stats["tool_calls"] += 1
         run.status = "done"
-        run.emit("pr", url=run.pr_url)
+        run.emit("commit", url=run.commit_url)
     except Exception as e:
         log.exception("apply for run %s failed", run.id)
         run.status = "failed"

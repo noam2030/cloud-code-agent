@@ -22,7 +22,7 @@ export type Run = {
   status: string;
   events: RunEvent[];
   proposal: Proposal | null;
-  pr_url: string | null;
+  commit_url: string | null;
   stats: Stats;
   duration_s: number;
 };

@@ -29,6 +29,8 @@ function describe(e: RunEvent): ReactNode {
       return <pre>{e.text}</pre>;
     case "awaiting_approval":
       return "Waiting for your approval";
+    case "commit":
+      return <a href={e.url}>Committed to main</a>;
     case "pr":
       return <a href={e.url}>Pull request opened</a>;
     case "rejected":
@@ -119,7 +121,7 @@ export default function App() {
       const id = await createRun(token!, message);
       localStorage.setItem(LAST_RUN_KEY, id);
       setInput("");
-      setRun({ id, message, status: "running", events: [], proposal: null, pr_url: null, stats: { llm_calls: 0, input_tokens: 0, output_tokens: 0, tool_calls: 0 }, duration_s: 0 });
+      setRun({ id, message, status: "running", events: [], proposal: null, commit_url: null, stats: { llm_calls: 0, input_tokens: 0, output_tokens: 0, tool_calls: 0 }, duration_s: 0 });
       attach(token!, id);
     } catch (err) {
       fail(err);
@@ -201,13 +203,13 @@ export default function App() {
                 </details>
               ))}
               <div className="row">
-                <button onClick={approve}>Approve and open PR</button>
+                <button onClick={approve}>Approve and push to main</button>
                 <button className="secondary" onClick={reject}>Reject</button>
               </div>
             </div>
           )}
 
-          {run.pr_url && <p><a href={run.pr_url}>Open pull request</a></p>}
+          {run.commit_url && <p><a href={run.commit_url}>View commit</a></p>}
 
           {!working && run.status !== "running" && (
             <footer className="stats">
