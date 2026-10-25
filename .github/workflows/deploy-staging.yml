@@ -1,0 +1,63 @@
+name: deploy-staging
+
+# Manual only: start it from the Actions tab with "Run workflow".
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy cloud-code-agent-staging
+        run: |
+          gcloud run deploy cloud-code-agent-staging \
+            --project ai-learning-499409 \
+            --region us-central1 \
+            --source . \
+            --service-account "${{ vars.RUNTIME_SA }}" \
+            --allow-unauthenticated \
+            --no-cpu-throttling \
+            --set-secrets "OPENAI_API_KEY=openai-api-key:latest,GITHUB_TOKEN=github-token:latest" \
+            --set-env-vars "GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }},CORS_ORIGINS=${{ vars.STAGING_CORS_ORIGINS }}"
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      # Preview environment: VITE_API_URL points at the staging backend.
+      - run: npx vercel pull --yes --environment=preview
+
+      - run: npx vercel build
+
+      - run: npx vercel deploy --prebuilt

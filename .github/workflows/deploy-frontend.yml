@@ -1,0 +1,36 @@
+name: deploy-frontend
+
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**"]
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+
+      # Pulls the production VITE_* variables from the Vercel project settings.
+      - run: npx vercel pull --yes --environment=production
+
+      - run: npx vercel build --prod
+
+      - run: npx vercel deploy --prebuilt --prod
