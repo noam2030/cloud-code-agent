@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { AuthError, approveRun, createRun, getRun, rejectRun, streamRun } from "./api";
+import { AuthError, NotFoundError, approveRun, createRun, getRun, rejectRun, streamRun } from "./api";
 import type { Run, RunEvent } from "./api";
 import { clearToken, loadToken, renderSignIn, saveToken } from "./auth";
 
@@ -54,6 +54,13 @@ export default function App() {
     if (err instanceof AuthError) {
       clearToken();
       setToken(null);
+    }
+    if (err instanceof NotFoundError) {
+      // The saved run is gone; forget it so the page stops asking for it.
+      localStorage.removeItem(LAST_RUN_KEY);
+      setRun(null);
+      setError("That run is no longer available. Start a new one.");
+      return;
     }
     setError(err instanceof Error ? err.message : String(err));
   }

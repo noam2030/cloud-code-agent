@@ -23,8 +23,8 @@ class NewRun(BaseModel):
     message: str = Field(min_length=1, max_length=8000)
 
 
-def _get_run(run_id: str) -> Run:
-    run = RUNS.get(run_id)
+async def _get_run(run_id: str) -> Run:
+    run = await orchestrator.load(run_id)
     if run is None:
         raise HTTPException(404, "unknown run")
     return run
@@ -44,13 +44,13 @@ async def create_run(body: NewRun, user: str = Depends(current_user)):
 
 
 @app.get("/runs/{run_id}")
-def get_run(run_id: str, user: str = Depends(current_user)):
-    return _get_run(run_id).to_dict()
+async def get_run(run_id: str, user: str = Depends(current_user)):
+    return (await _get_run(run_id)).to_dict()
 
 
 @app.get("/runs/{run_id}/events")
 async def stream_events(run_id: str, user: str = Depends(current_user)):
-    run = _get_run(run_id)
+    run = await _get_run(run_id)
 
     async def stream():
         sent = 0
@@ -68,7 +68,7 @@ async def stream_events(run_id: str, user: str = Depends(current_user)):
 
 @app.post("/runs/{run_id}/approve")
 async def approve_run(run_id: str, user: str = Depends(current_user)):
-    run = _get_run(run_id)
+    run = await _get_run(run_id)
     if run.status != "awaiting_approval":
         raise HTTPException(409, f"run is {run.status}")
     run.status = "applying"
@@ -78,7 +78,7 @@ async def approve_run(run_id: str, user: str = Depends(current_user)):
 
 @app.post("/runs/{run_id}/reject")
 async def reject_run(run_id: str, user: str = Depends(current_user)):
-    run = _get_run(run_id)
+    run = await _get_run(run_id)
     if run.status != "awaiting_approval":
         raise HTTPException(409, f"run is {run.status}")
     run.status = "rejected"
