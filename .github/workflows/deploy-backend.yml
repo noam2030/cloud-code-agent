@@ -1,0 +1,41 @@
+name: deploy-backend
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**", "Dockerfile", ".dockerignore"]
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # Builds the root Dockerfile with Cloud Build and deploys to Cloud Run.
+      # The app checks Google sign-in itself, so the service is reachable without IAM.
+      - name: Deploy cloud-code-agent
+        run: |
+          gcloud run deploy cloud-code-agent \
+            --project ai-learning-499409 \
+            --region us-central1 \
+            --source . \
+            --service-account "${{ vars.RUNTIME_SA }}" \
+            --allow-unauthenticated \
+            --no-cpu-throttling \
+            --set-secrets "OPENAI_API_KEY=openai-api-key:latest,GITHUB_TOKEN=github-token:latest" \
+            --set-env-vars "GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }},CORS_ORIGINS=${{ vars.CORS_ORIGINS }}"
